@@ -1,25 +1,140 @@
-# fahh
+````markdown
+# fahhctl 🔊
 
-Play a FAHH sound when a command is not found in your terminal.
+Play a dramatic **FAHH** sound when you type a command that doesn't exist.
 
-Supports:
-- zsh
-- bash
+Because terminal mistakes deserve sound effects.
+
+Works with **zsh** and **bash**.
+
+---
 
 ## Install
 
+```bash
 curl -fsSL https://raw.githubusercontent.com/hamza-topo/fahhctl/main/install.sh | bash
+````
 
-Restart terminal.
+Then reload your shell:
 
-## Test
+```bash
+source ~/.zshrc
+```
 
-Type:
+or just open a new terminal.
 
-asdfasdf
+---
 
-You should hear FAHH.
+## Try it
+
+```bash
+asdasdasd
+```
+
+Expected result:
+
+```
+zsh: command not found: asdasdasd
+*FAHH sound plays*
+```
+
+---
 
 ## Uninstall
 
+```bash
 curl -fsSL https://raw.githubusercontent.com/hamza-topo/fahhctl/main/uninstall.sh | bash
+```
+
+---
+
+## Requirements
+
+You need a player capable of playing mp3.
+
+Recommended:
+
+```bash
+sudo apt install mpv
+```
+
+Also works with:
+
+* ffplay
+* mpg123
+* paplay
+* aplay
+
+---
+
+## Commands
+
+```bash
+fahhctl status
+fahhctl enable
+fahhctl disable
+fahhctl play
+```
+
+---
+
+## Custom sound
+
+Replace the sound file:
+
+```bash
+~/.local/share/fahh/fahh.mp3
+```
+
+Example:
+
+```bash
+cp your-sound.mp3 ~/.local/share/fahh/fahh.mp3
+```
+
+---
+
+## How it works
+
+The installer adds a tiny hook to your shell config.
+
+When a command doesn't exist, it runs:
+
+```
+fahhctl play
+```
+
+Your shell still prints the normal error message.
+
+---
+
+## Why `source ~/.zshrc`?
+
+The installer edits your shell config, but your current terminal session doesn't reload automatically.
+
+Opening a new terminal also works.
+
+---
+
+## Contributing
+
+Ideas welcome.
+
+* other shells
+* better installer UX
+* different trigger modes
+* config file
+
+---
+
+## License
+
+MIT
+
+```
+
+Play a FAHH sound when a command is not found.
+
+````
+
+---
