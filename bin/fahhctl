@@ -3,66 +3,77 @@ set -euo pipefail
 
 APP="fahh"
 DATA_DIR="$HOME/.local/share/$APP"
-BIN_DIR="$HOME/.local/bin"
-SOUND_PATH="$HOME/.local/share/fahh/fahh.mp3"
+SOUND_PATH="$DATA_DIR/fahh.mp3"
+
 ZSHRC="$HOME/.zshrc"
 BASHRC="$HOME/.bashrc"
 
-MARK_START="# >>> fahhctl >>>"
-MARK_END="# <<< fahhctl <<<"
+ZSH_START="# >>> fahhctl zsh >>>"
+ZSH_END="# <<< fahhctl zsh <<<"
+BASH_START="# >>> fahhctl bash >>>"
+BASH_END="# <<< fahhctl bash <<<"
+PATH_START="# >>> fahhctl path >>>"
+PATH_END="# <<< fahhctl path <<<"
 
 remove_block() {
-  local file="$1"
+  local file="$1" start="$2" end="$3"
   [ -f "$file" ] || return 0
-  perl -0777 -i -pe "s/\n?\Q$MARK_START\E.*?\Q$MARK_END\E\n?/\n/s" "$file" || true
+  perl -0777 -i -pe "s/\n?\Q$start\E.*?\Q$end\E\n?/\n/s" "$file" || true
 }
 
-ensure_path_line() {
+ensure_path() {
   local file="$1"
   [ -f "$file" ] || touch "$file"
-  if ! grep -qF "$MARK_START" "$file"; then
-    cat >> "$file" <<EOF
+  if ! grep -qF "$PATH_START" "$file"; then
+    cat >>"$file" <<EOF
 
-$MARK_START
-# Ensure ~/.local/bin is in PATH (needed for fahhctl)
+$PATH_START
 export PATH="\$HOME/.local/bin:\$PATH"
-$MARK_END
+$PATH_END
 EOF
   fi
 }
 
-install_hooks() {
-  # zsh
+enable_zsh() {
   [ -f "$ZSHRC" ] || touch "$ZSHRC"
-  remove_block "$ZSHRC"
-  cat >> "$ZSHRC" <<'EOF'
+  remove_block "$ZSHRC" "$ZSH_START" "$ZSH_END"
+  cat >>"$ZSHRC" <<EOF
 
-# >>> fahhctl >>>
+$ZSH_START
 command_not_found_handler() {
   if command -v fahhctl >/dev/null 2>&1; then
     fahhctl play >/dev/null 2>&1 &
   fi
-  print -u2 "zsh: command not found: $1"
+  print -u2 "zsh: command not found: \$1"
   return 127
 }
-# <<< fahhctl <<<
+$ZSH_END
 EOF
+}
 
-  # bash
+enable_bash() {
   [ -f "$BASHRC" ] || touch "$BASHRC"
-  remove_block "$BASHRC"
-  cat >> "$BASHRC" <<'EOF'
+  remove_block "$BASHRC" "$BASH_START" "$BASH_END"
+  cat >>"$BASHRC" <<EOF
 
-# >>> fahhctl >>>
+$BASH_START
 command_not_found_handle() {
   if command -v fahhctl >/dev/null 2>&1; then
     fahhctl play >/dev/null 2>&1 &
   fi
-  echo "bash: $1: command not found"
+  echo "bash: \$1: command not found"
   return 127
 }
-# <<< fahhctl <<<
+$BASH_END
 EOF
+}
+
+disable_all() {
+  remove_block "$ZSHRC" "$ZSH_START" "$ZSH_END"
+  remove_block "$BASHRC" "$BASH_START" "$BASH_END"
+  # optional: remove PATH block too
+  remove_block "$ZSHRC" "$PATH_START" "$PATH_END"
+  remove_block "$BASHRC" "$PATH_START" "$PATH_END"
 }
 
 play() {
@@ -83,54 +94,35 @@ play() {
   fi
 }
 
-cmd_install() {
-  local src="${1:-}"
-  if [ -z "$src" ] || [ ! -f "$src" ]; then
-    echo "Usage: fahhctl install /path/to/fahh.(mp3|wav)"
-    exit 1
-  fi
-
-  mkdir -p "$DATA_DIR" "$BIN_DIR"
-  cp -f "$src" "$SOUND_PATH"
-
-  ensure_path_line "$ZSHRC"
-  ensure_path_line "$BASHRC"
-  install_hooks
-
-  echo "Installed ✅"
-  echo "Sound: $SOUND_PATH"
-  echo "Reload: source ~/.zshrc (or open a new terminal)"
-}
-
-cmd_uninstall() {
-  remove_block "$ZSHRC"
-  remove_block "$BASHRC"
-  rm -rf "$DATA_DIR" 2>/dev/null || true
-  echo "Uninstalled ✅ (hooks removed, sound deleted)"
-}
-
-cmd_status() {
+status() {
   echo "Sound: $SOUND_PATH -> $([ -f "$SOUND_PATH" ] && echo OK || echo MISSING)"
-  echo "Players:"
-  echo "  mpv:    $(command -v mpv >/dev/null 2>&1 && echo OK || echo NO)"
-  echo "  ffplay: $(command -v ffplay >/dev/null 2>&1 && echo OK || echo NO)"
-  echo "  mpg123: $(command -v mpg123 >/dev/null 2>&1 && echo OK || echo NO)"
-  echo "  paplay: $(command -v paplay >/dev/null 2>&1 && echo OK || echo NO)"
-  echo "  aplay:  $(command -v aplay >/dev/null 2>&1 && echo OK || echo NO)"
+  echo "Hooks:"
+  echo "  zsh:  $([ -f "$ZSHRC" ] && grep -qF "$ZSH_START" "$ZSHRC" && echo ENABLED || echo DISABLED)"
+  echo "  bash: $([ -f "$BASHRC" ] && grep -qF "$BASH_START" "$BASHRC" && echo ENABLED || echo DISABLED)"
 }
 
 case "${1:-}" in
-  install) shift; cmd_install "${1:-}" ;;
-  uninstall) cmd_uninstall ;;
+  enable)
+    ensure_path "$ZSHRC"
+    ensure_path "$BASHRC"
+    enable_zsh
+    enable_bash
+    echo "Hooks enabled ✅"
+    ;;
+  disable)
+    disable_all
+    echo "Hooks disabled ✅"
+    ;;
   play) play ;;
-  status) cmd_status ;;
+  status) status ;;
   *)
     cat <<EOF
 Usage:
-  fahhctl install /path/to/fahh.(mp3|wav)
+  fahhctl enable
+  fahhctl disable
   fahhctl status
   fahhctl play
-  fahhctl uninstall
 EOF
+    exit 2
     ;;
 esac

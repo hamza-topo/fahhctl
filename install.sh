@@ -26,7 +26,7 @@ curl -fsSL "${RAW}/sounds/fahh.mp3" -o "$SOUND_PATH"
 
 # Enable hooks (zsh + bash)
 echo "Enabling shell hooks..."
-"$FAHHCTL_PATH" enable >/dev/null
+"$FAHHCTL_PATH" enable
 
 echo ""
 echo "✅ Installation complete"
