@@ -1,3 +1,6 @@
+![License](https://img.shields.io/github/license/hamza-topo/fahhctl)
+![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-blue)
+![Stars](https://img.shields.io/github/stars/hamza-topo/fahhctl)
 ````markdown
 # fahhctl 🔊
 
@@ -136,5 +139,6 @@ MIT
 Play a FAHH sound when a command is not found.
 
 ````
+
 
 ---
