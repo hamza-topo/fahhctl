@@ -1,27 +1,54 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-REPO="https://raw.githubusercontent.com/hamza-topo/fahhctl/main"
+OWNER="hamza-topo"
+REPO="fahhctl"
+BRANCH="main"
+
+RAW="https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}"
 
 BIN_DIR="$HOME/.local/bin"
 DATA_DIR="$HOME/.local/share/fahh"
 
-mkdir -p "$BIN_DIR"
-mkdir -p "$DATA_DIR"
+FAHHCTL_PATH="$BIN_DIR/fahhctl"
+SOUND_PATH="$DATA_DIR/fahh.mp3"
 
 echo "Installing fahhctl..."
+mkdir -p "$BIN_DIR" "$DATA_DIR"
 
-curl -fsSL "$REPO/bin/fahhctl" -o "$BIN_DIR/fahhctl"
-chmod +x "$BIN_DIR/fahhctl"
+# Download binary
+curl -fsSL "${RAW}/bin/fahhctl" -o "$FAHHCTL_PATH"
+chmod +x "$FAHHCTL_PATH"
 
+# Download bundled sound
 echo "Installing sound..."
+curl -fsSL "${RAW}/sounds/fahh.mp3" -o "$SOUND_PATH"
 
-curl -fsSL "$REPO/sounds/fahh.mp3" -o "$DATA_DIR/fahh.mp3"
+# Enable hooks (zsh + bash)
+echo "Enabling shell hooks..."
+"$FAHHCTL_PATH" enable >/dev/null
 
-echo "Installation complete ✅"
 echo ""
-echo "Run:"
-echo "source ~/.zshrc"
+echo "✅ Installation complete"
+echo "Binary: $FAHHCTL_PATH"
+echo "Sound:  $SOUND_PATH"
 echo ""
-echo "Then test with:"
-echo "fakecommand"
+
+# Ask to reload shell now
+read -r -p "Reload shell now? [Y/n]: " answer
+answer="${answer:-Y}"
+
+case "$answer" in
+  [Yy]* )
+    echo "Reloading shell..."
+    # exec replaces the current shell process, making .zshrc/.bashrc load
+    exec "${SHELL:-/bin/sh}"
+    ;;
+  * )
+    echo "Ok. To activate in this terminal run:"
+    echo "  source ~/.zshrc   # if you use zsh"
+    echo "  source ~/.bashrc  # if you use bash"
+    echo ""
+    echo "Test: type a wrong command like: fakecommand"
+    ;;
+esac
