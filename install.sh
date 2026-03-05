@@ -52,3 +52,23 @@ case "$answer" in
     echo "Test: type a wrong command like: fakecommand"
     ;;
 esac
+
+# Ask to reload shell (must read from terminal, not from the pipe)
+if [ -t 1 ] && [ -r /dev/tty ]; then
+  echo ""
+  printf "Reload shell now to activate hooks? [Y/n]: " > /dev/tty
+  read -r answer < /dev/tty || answer="Y"
+  answer="${answer:-Y}"
+
+  case "$answer" in
+    [Yy]* )
+      echo "Reloading shell..." > /dev/tty
+      exec "${SHELL:-/bin/sh}"
+      ;;
+    * )
+      echo "Ok. Run: source ~/.zshrc (or open a new terminal)" > /dev/tty
+      ;;
+  esac
+else
+  echo "Open a new terminal or run: source ~/.zshrc"
+fi
